@@ -12,7 +12,8 @@ import java.util.Map;
 public class MasterImpl implements Master {
 
 	private Map<String, Slave> escravos;
-	private List<Thread> threads = new ArrayList<Thread>();
+	//private List<Thread> threads = new ArrayList<Thread>();
+	List<ThreadDTO> workers = new ArrayList<ThreadDTO>();
 	
 	
 	public MasterImpl(){
@@ -26,7 +27,7 @@ public class MasterImpl implements Master {
 		//}
 
 		//System.out.println("Connection try at host: " + host);
-
+		
 		try {
 			MasterImpl obj = new MasterImpl();
 
@@ -44,36 +45,46 @@ public class MasterImpl implements Master {
 	
 	@Override
 	public int addSlave(Slave s, String slavename) throws RemoteException {
-		synchronized(this){
-		escravos.put(slavename,s);
+		String situacao = "verificado";
+		for (Map.Entry<String, Slave> entry : escravos.entrySet()) {
+			if(!entry.getKey().equals(slavename)){
+				synchronized(this){
+					escravos.put(slavename,s);
+					situacao = "adicionado";
+				}
+			}
 		}
-		System.out.println("Escravo adicionado.");
+		
+		System.out.println("Escravo "+situacao+".");
 		
 		return 0;
 	}
-
+	//TODO redistribui a tarefa
 	@Override
 	public void removeSlave(int slaveKey) throws RemoteException {
-		escravos.remove(slaveKey);
-		
+		for(int i=0;i<workers.size();i++){
+			if(workers.get(i).id.equals(slaveKey)){
+				escravos.remove(slaveKey);
+				workers.get(i).interrupt();
+				//redistribui a tarefa dele com ATTACK;
+			}
+		}
 	}
 
 	@Override
 	public void foundGuess(long currentindex, Guess currentguess)
 			throws RemoteException {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void checkpoint(long currentindex) throws RemoteException {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-		List<ThreadDTO> workers = new ArrayList<ThreadDTO>();
+		
 		long tamanho = ciphertext.length;
 		long pedaco = tamanho / escravos.size();
 		long from = 0, to = pedaco-1;
@@ -81,37 +92,28 @@ public class MasterImpl implements Master {
 			
 			if (from + to > tamanho) {
 				to = tamanho-1;
-				ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext,from,to);
+				ThreadDTO exec = new ThreadDTO(entry.getKey(),entry.getValue(),ciphertext,knowntext,from,to);
 				workers.add(exec);
-				Thread t = new Thread(exec);
-				threads.add(t);
-				t.start();
+				//Thread t = new Thread(exec);
+				//threads.add(t);
+				exec.start();
+				//t.start();
 				
 			} else {
-				ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext,from,to);
+				ThreadDTO exec = new ThreadDTO(entry.getKey(),entry.getValue(),ciphertext,knowntext,from,to);
 				workers.add(exec);
-				Thread t = new Thread(exec);
-				threads.add(t);
-				t.start();
+				//Thread t = new Thread(exec);
+				//threads.add(t);
+				exec.start();
+				//t.start();
 				from = to+1;
 				to += pedaco;
 			}
-			
-
-			
-			/* Criacao de threads. */
-			/*ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext);
-			workers.add(exec);
-			Thread t = new Thread(exec);
-			threads.add(t);
-
-			t.start();*/
 
 		}
-		for (Thread t : threads) {
+		for (ThreadDTO t : workers) {
 			try {
 				t.join();
-				//Thread.sleep(30000);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -123,11 +125,13 @@ public class MasterImpl implements Master {
 		public long inicio;
 		public long fim;
 		public final Slave escravo;
+		public String id;
 		public SlaveManager sm;
 		public byte[] cipher;
 		public byte[] known;
 
-		public ThreadDTO(Slave es,byte[] ciphertext, byte[] knowntext,long initialwordindex,long finalwordindex) {
+		public ThreadDTO(String id,Slave es,byte[] ciphertext, byte[] knowntext,long initialwordindex,long finalwordindex) {
+			this.id = id;
 			this.inicio = initialwordindex;
 			this.fim = finalwordindex;
 			this.cipher = ciphertext;
@@ -138,16 +142,12 @@ public class MasterImpl implements Master {
 		/* Executa quando a thread eh iniciacada. */
 		@Override
 		public void run() {
-
-			try {
-				
-				System.out.println("");
-				escravo.startSubAttack(cipher,known,inicio,fim,sm);
-				
-				
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
+				try {
+					escravo.startSubAttack(cipher,known,inicio,fim,sm);
+					
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 		}
 	}
 
