@@ -15,7 +15,7 @@ public class SlaveImpl implements Slave{
 
 	@Override
 	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
-		int tempo = (1000 * 10);   // 10 segundos.  
+		/*int tempo = (1000 * 10);   // 10 segundos.  
 		int periodo = 1;  // quantidade de vezes a ser executado.  
 		Timer timer = new Timer();  
 		timer.scheduleAtFixedRate(  
@@ -23,7 +23,8 @@ public class SlaveImpl implements Slave{
 		            public void run() {  
 		                //aqui vai o checkpoint 
 		            }  
-		        }, tempo, periodo);
+		        }, tempo, periodo);*/
+		System.out.println("CHEGOU NO SUBATAQUE");
 	
 	}
 	
