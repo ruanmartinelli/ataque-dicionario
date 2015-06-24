@@ -41,7 +41,7 @@ public class SlaveImpl implements Slave{
 			
 			//Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 2001);
 			Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
-			 
+			
 			mestre.addSlave(stub, escravo.getId());
 		} catch (RemoteException e) {
 			e.printStackTrace();
