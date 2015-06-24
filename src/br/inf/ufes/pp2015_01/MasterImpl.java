@@ -30,7 +30,7 @@ public class MasterImpl implements Master {
 		try {
 			MasterImpl obj = new MasterImpl();
 
-			Master ref = (Master) UnicastRemoteObject.exportObject(obj,2001);
+			Master ref = (Master) UnicastRemoteObject.exportObject(obj,0);
 
 			Registry registry = LocateRegistry.getRegistry();
 			//registry.rebind("mestre", ref);
@@ -54,7 +54,7 @@ public class MasterImpl implements Master {
 
 	@Override
 	public void removeSlave(int slaveKey) throws RemoteException {
-		// TODO Auto-generated method stub
+		escravos.remove(slaveKey);
 		
 	}
 
@@ -74,18 +74,38 @@ public class MasterImpl implements Master {
 	@Override
 	public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
 		List<ThreadDTO> workers = new ArrayList<ThreadDTO>();
-		
+		long tamanho = ciphertext.length;
+		long pedaco = tamanho / escravos.size();
+		long from = 0, to = pedaco-1;
 		for (Map.Entry<String, Slave> entry : escravos.entrySet()) {
-			List<Integer> subpalavras = new ArrayList<Integer>();
+			
+			if (from + to > tamanho) {
+				to = tamanho-1;
+				ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext,from,to);
+				workers.add(exec);
+				Thread t = new Thread(exec);
+				threads.add(t);
+				t.start();
+				
+			} else {
+				ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext,from,to);
+				workers.add(exec);
+				Thread t = new Thread(exec);
+				threads.add(t);
+				t.start();
+				from = to+1;
+				to += pedaco;
+			}
+			
 
 			
 			/* Criacao de threads. */
-			ThreadDTO exec = new ThreadDTO(entry.getValue(),subpalavras,ciphertext,knowntext);
+			/*ThreadDTO exec = new ThreadDTO(entry.getValue(),ciphertext,knowntext);
 			workers.add(exec);
 			Thread t = new Thread(exec);
 			threads.add(t);
 
-			t.start();
+			t.start();*/
 
 		}
 		for (Thread t : threads) {
@@ -100,17 +120,19 @@ public class MasterImpl implements Master {
 	}
 	/* Inner class para auxiliar*/
 	public class ThreadDTO extends Thread {
-
+		public long inicio;
+		public long fim;
 		public final Slave escravo;
-		public List<Integer> lista;
+		public SlaveManager sm;
 		public byte[] cipher;
 		public byte[] known;
 
-		public ThreadDTO(Slave es, List<Integer> lista,byte[] ciphertext, byte[] knowntext) {
+		public ThreadDTO(Slave es,byte[] ciphertext, byte[] knowntext,long initialwordindex,long finalwordindex) {
+			this.inicio = initialwordindex;
+			this.fim = finalwordindex;
 			this.cipher = ciphertext;
 			this.known = knowntext;
 			this.escravo = es;
-			this.lista = lista;
 		}
 
 		/* Executa quando a thread eh iniciacada. */
@@ -120,7 +142,7 @@ public class MasterImpl implements Master {
 			try {
 				
 				System.out.println("");
-				lista = escravo.startSubAttack(cipher,known,/*long com o indice inicial*/,/*long com o indice final*/,/*função de callback*/);
+				escravo.startSubAttack(cipher,known,inicio,fim,sm);
 				
 				
 			} catch (RemoteException e) {

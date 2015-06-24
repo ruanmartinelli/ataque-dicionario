@@ -15,5 +15,5 @@ public interface Attacker extends Remote {
 	 * decritografada com chaves candidatas
 	 */
 	public Guess[] attack(byte[] ciphertext, 
-			byte[] knowntext);
+			byte[] knowntext) throws java.rmi.RemoteException;
 }
