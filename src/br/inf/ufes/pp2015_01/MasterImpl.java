@@ -51,7 +51,6 @@ public class MasterImpl implements Master {
 				synchronized(this){
 					escravos.put(slavename,s);
 					situacao = "adicionado";
-					
 				}
 			}
 		}
@@ -60,31 +59,26 @@ public class MasterImpl implements Master {
 		
 		return 0;
 	}
-
+	//TODO redistribui a tarefa
 	@Override
 	public void removeSlave(int slaveKey) throws RemoteException {
 		for(int i=0;i<workers.size();i++){
 			if(workers.get(i).id.equals(slaveKey)){
-				//remover o escravo da lista de workers
-				//matar a workers.cancel()
+				escravos.remove(slaveKey);
+				workers.get(i).interrupt();
 				//redistribui a tarefa dele com ATTACK;
 			}
 		}
-		escravos.remove(slaveKey);
-		
-		
 	}
 
 	@Override
 	public void foundGuess(long currentindex, Guess currentguess)
 			throws RemoteException {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void checkpoint(long currentindex) throws RemoteException {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -148,13 +142,12 @@ public class MasterImpl implements Master {
 		/* Executa quando a thread eh iniciacada. */
 		@Override
 		public void run() {
-
-			try {
-				escravo.startSubAttack(cipher,known,inicio,fim,sm);
-				
-			} catch (RemoteException e) {
-				e.printStackTrace();
-			}
+				try {
+					escravo.startSubAttack(cipher,known,inicio,fim,sm);
+					
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 		}
 	}
 

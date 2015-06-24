@@ -5,6 +5,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 public class SlaveImpl implements Slave{
@@ -12,9 +14,17 @@ public class SlaveImpl implements Slave{
 	private String id;
 
 	@Override
-	public void startSubAttack(byte[] ciphertext, byte[] knowntext,
-			long initialwordindex, long finalwordindex,
-			SlaveManager callbackinterface) throws RemoteException {
+	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
+		int tempo = (1000 * 10);   // 10 segundos.  
+		int periodo = 1;  // quantidade de vezes a ser executado.  
+		Timer timer = new Timer();  
+		timer.scheduleAtFixedRate(  
+		        new TimerTask() {  
+		            public void run() {  
+		                //aqui vai o checkpoint 
+		            }  
+		        }, tempo, periodo);
+	
 	}
 	
 	/* Procura Master no Registry e retorna a interface. */
