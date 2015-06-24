@@ -13,36 +13,25 @@ import java.util.UUID;
 
 public class ClienteMain {
 	
-	 private static byte[] geraArquivo(){
-		 
+	/* Gera arquivo de tamanho aleatorio caso nao seja passado um vetor.*/
+	private static byte[] geraArquivo()
+	{
 		 Random r = new Random();
 		 int size = r.nextInt(100000 - 1000) + 1000;
 		 
-		 String fileName = UUID.randomUUID().toString();
-		 
-		 byte[] result = new byte[size];
-		 Random random = new Random();
-		 random.nextBytes(result);
-		 System.out.println(result);
- 
-		 try {
-			 FileOutputStream fos = new FileOutputStream(fileName);
-			 fos.write(result);
-			 fos.close();
-		 } catch (IOException e) {
-			 System.out.println("@DEBUG: Erro ao escrever Arquivo");
-		 }
-		 return result;
+		 return geraArquivo(size);
 	 }
 	 
-	 private static byte[] geraArquivo(int tamanho){
+	/* Gera arquivo de tamanho 'int tamanho'*/
+	 private static byte[] geraArquivo(int tamanho)
+	 {
 		 
 		 String fileName = UUID.randomUUID().toString();
 		 
 		 byte[] result = new byte[tamanho];
 		 Random random = new Random();
-		 random.nextBytes(result);
-		 System.out.println(result);
+		 random.nextBytes	(result);
+		 System.out.println	(result);
 		 
 		 try {
 			 FileOutputStream fos = new FileOutputStream(fileName);
@@ -54,37 +43,46 @@ public class ClienteMain {
 		  return result;
 	 }
 	 
-	 private static Master findMaster(String host){
+	/*Procura mestre no Registry e retorna a interface encontrada.*/  
+	 private static Master findMaster(String host)
+	 {
 		 Registry registry;
 		 Master stub = null;
 			try {
-				registry = LocateRegistry.getRegistry(host);
-				stub = (Master) registry.lookup("mestre");
+				registry 	= LocateRegistry.getRegistry(host);
+				stub 		= (Master) registry.lookup("mestre");
 			} catch (RemoteException | NotBoundException e) {
 				e.printStackTrace();
 			}
-				
 		 return stub;
 	 }
 	 
 	 
 	public static void main(String[] args) {
 		
+		/*
+		* Argumentos:
+		* 	args[0]: endereço do mestre
+		* 	args[1]: palavra conhecida
+		* 	args[2]: nome do arquivo criptografado
+		* 	args[3]: tamanho do vetor
+		*/
+		
 		String fileName 		= args[2];
-		String palavraConhecida = args[1];
+		byte[] palavraConhecida = args[1].getBytes();
 		byte[] byteArray 		= null;
 
 		//fileName = "asdasfas";
 	
 		try (BufferedReader br = new BufferedReader(new FileReader(fileName)))
 		{
-			String sCurrentLine;
+			String linha;
  
-			while ((sCurrentLine = br.readLine()) != null) {
-				System.out.println(sCurrentLine);
+			while ((linha = br.readLine()) != null) {
+				System.out.println(linha);
 			}
  
-		} catch (IOException e) {
+		} catch (IOException e){
 			
 			System.out.println("[DEBUG]: Arquivo não encontrado.");
 			if(args.length > 3){
@@ -93,9 +91,15 @@ public class ClienteMain {
 				byteArray = geraArquivo();
 			}
 		} 
-		//TODO 
+
 		Master master = findMaster(args[0]);
-		//master.attack(byteArray, palavraConhecida);
+		
+		try {
+			master.attack(byteArray, palavraConhecida);
+		
+		} catch (RemoteException e) {
+			System.out.println("[DEBUG]: Erro na execução do Mestre");
+		}
 		
 	}
 
