@@ -31,8 +31,8 @@ public class Encrypt {
 	}
 	
 	public static void main(String[] args) {
-		// args[0] È a chave a ser usada
-		// args[1] È o nome do arquivo de entrada
+		// args[0] e a chave a ser usada
+		// args[1] e o nome do arquivo de entrada
 		
     	try {
 			byte[] key = args[0].getBytes();

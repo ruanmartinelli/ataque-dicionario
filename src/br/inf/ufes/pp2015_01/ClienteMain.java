@@ -59,7 +59,7 @@ public class ClienteMain {
 
 		/*
 		 * Argumentos: 
-		 * args[0]: endereço do mestre 
+		 * args[0]: endereco do mestre 
 		 * args[1]: palavra conhecida
 		 * args[2]: nome do arquivo criptografado 
 		 * args[3]: tamanho do vetor
@@ -73,7 +73,7 @@ public class ClienteMain {
 		try {
 			byteArray = Files.readAllBytes(path);
 		} catch (IOException e1) {
-			System.out.println("[DEBUG]: Arquivo" + fileName +" não encontrado.");
+			System.out.println("[DEBUG]: Arquivo" + fileName +" nao encontrado.");
 			if (args.length > 3) {
 				byteArray = geraArquivo(Integer.parseInt(args[3]));
 			} else {
@@ -88,7 +88,7 @@ public class ClienteMain {
 			master.attack(byteArray, palavraConhecida);
 
 		} catch (RemoteException e) {
-			System.out.println("[DEBUG]: Erro na execução do Mestre");
+			System.out.println("[DEBUG]: Erro na execucao do Mestre");
 		}
 
 	}

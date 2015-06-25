@@ -125,6 +125,8 @@ public class SlaveImpl implements Slave{
 		            }  
 		        }, tempo, periodo);
 	*/
+		
+	
 	}
 	
 	/* Procura Master no Registry e retorna a interface. */
