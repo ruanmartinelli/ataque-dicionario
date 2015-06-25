@@ -3,7 +3,7 @@ package br.inf.ufes.pp2015_01;
 import java.rmi.RemoteException;
 
 
-/*Para testar as funções localmente*/
+/*Para testar as funcoes localmente*/
 public class MainTeste {
 	
 	private static Master master;

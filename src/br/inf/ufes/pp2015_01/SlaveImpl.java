@@ -24,6 +24,7 @@ public class SlaveImpl implements Slave{
 		                //aqui vai o checkpoint 
 		            }  
 		        }, tempo, periodo);*/
+		
 		System.out.println("CHEGOU NO SUBATAQUE");
 	
 	}
