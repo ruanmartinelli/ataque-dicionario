@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -25,7 +27,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class SlaveImpl implements Slave{
 	
 	private String id;
-
+	private static Integer currentIndex = 0;
 	private static List<String> dicionario;
 	
 	public SlaveImpl(){
@@ -51,7 +53,7 @@ public class SlaveImpl implements Slave{
 	}
 	
 	private static List<String> getSublista (Integer inicio, Integer fim){
-		return dicionario.subList(inicio, fim);
+		return dicionario.subList(inicio, fim+1);
 	}
 	
 	public static int longToIntSeguro(long l) {
@@ -63,24 +65,26 @@ public class SlaveImpl implements Slave{
 	}
 	
 	public static byte[] decrypt(String key, byte[] ciphertext){
+		byte[] chave =  new byte[key.length()];
+		byte[] message = new byte[ciphertext.length];
+		byte[] decrypted = null;
 		try{
-			byte[] chave = key.getBytes();
+			chave = key.getBytes();
 			SecretKeySpec keySpec = new SecretKeySpec(chave, "Blowfish");
 			
-			byte[] message = ciphertext;
+			message = ciphertext;
 			System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
 			
 			Cipher cipher = Cipher.getInstance("Blowfish");
 			cipher.init(Cipher.DECRYPT_MODE, keySpec);
-			byte[] decrypted = cipher.doFinal(message);
+			decrypted = cipher.doFinal(message);
 			
 			return decrypted;
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
 			System.out.println("[ERRO]: Erro ao decriptografar mensagem com a chave "+ key);
 			e.printStackTrace();
-			
+			return decrypted;
 		}
-		return null;
 	}
 	
 	public int indexOf(byte[] outerArray, byte[] smallerArray) {
@@ -99,33 +103,32 @@ public class SlaveImpl implements Slave{
 	
 	@Override
 	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
-		Integer currentIndex = 0;
+		
 		Guess candidata = new Guess();
 		
+		//Checkpoint a cada 10 segundos
+				Timer timer = new Timer();  
+				timer.scheduleAtFixedRate(  
+				        new TimerTask() {  
+				            public void run() {  
+				            	try {
+				            		callbackinterface.checkpoint(currentIndex + initialwordindex);
+								} catch (RemoteException e) {
+									e.printStackTrace();
+								} 
+				            }  
+				        }, 10000, 10000);
+		
 		for(String palavra : getSublista(longToIntSeguro(initialwordindex),longToIntSeguro(finalwordindex))){
-			currentIndex++;
 			byte[] resposta = decrypt(palavra, ciphertext);
 			
-			if(indexOf(ciphertext, resposta) != -1){
+			if(resposta!= null && indexOf(ciphertext, resposta) != -1){
 				candidata.setKey(palavra);
 				candidata.setMessage(resposta);
 				callbackinterface.foundGuess(currentIndex + initialwordindex, candidata);
 			}
+			currentIndex++;
 		}
-		
-		//TODO Checkpoint a cada 10segundos
-		
-	/*	int tempo = (1000 * 10);   // 10 segundos.  
-		int periodo = 1;  // quantidade de vezes a ser executado.  
-		Timer timer = new Timer();  
-		timer.scheduleAtFixedRate(  
-		        new TimerTask() {  
-		            public void run() {  
-		                //aqui vai o checkpoint 
-		            }  
-		        }, tempo, periodo);
-	*/
-		
 	
 	}
 	
@@ -154,7 +157,19 @@ public class SlaveImpl implements Slave{
 			//Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 2001);
 			Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
 			
-			mestre.addSlave(stub, escravo.getId());
+			//chama addSlave de 30 em 30 segundos
+			Timer timer = new Timer();  
+			timer.scheduleAtFixedRate(  
+			        new TimerTask() {  
+			            public void run() {  
+			            	try {
+								mestre.addSlave(stub, escravo.getId());
+							} catch (RemoteException e) {
+								e.printStackTrace();
+							} 
+			            }  
+			        }, 0, 30000);
+			
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
