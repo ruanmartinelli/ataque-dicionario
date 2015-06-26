@@ -10,6 +10,7 @@
 	[ ] Imprimir tempo(que tempo?) e índice atual "a partir de startSubAttack" para cada checkpoint
 	[X] Imprimir quando receber o último checkpoint
 	[ ] Acertar ID dos escravos para ler na HashMap do Mestre
+	[ ] Lista de qual escravo ta com quais índices
 
 #####2. Escravos
 	[X] Registrar no Mestre
