@@ -16,7 +16,7 @@
 	[X] Re-registrar a cada 30 segundos
 	[ ] addSlave não ocorrendo de forma concorrente
 	[ ] Testar decrypt com senhas candidatas 
-	[ ] Chamar foundGuess ao encontrar senha
+	[X] Chamar foundGuess ao encontrar senha
 	[X] Enviar checkpoints a cada 10 segundos
 	[X] Enviar checkpoint final ao terminar a tarefa
 
@@ -26,7 +26,7 @@
 	[X] Gerar arquivo aleatório com tamanho dado, caso não encontre arquivo do argumento
 	[X] Obter interface do Mestre
 	[X] Chamar função de ataque do mestre
-	[ ] Imprimir chaves candidatas recebidas
+	[X] Imprimir chaves candidatas recebidas
 	[ ] Colocar essas chaves em arquivos com nome <chave>.msg
 	
 #####4. Relatório
