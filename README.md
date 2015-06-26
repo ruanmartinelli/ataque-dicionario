@@ -2,7 +2,7 @@
 
 #####1. Mestre
 	[X] Registrar no Registry
-	[ ] Dividir o dicionário corretamente
+	[X] Dividir o dicionário corretamente
 	[ ] Solicitandar ataque por startSubAttack
 	[ ] Redirecionar trabalho caso o escravo gere uma exceção
 	[ ] Redirecionar trabalho caso o escravo não responda em 20 segundos
@@ -11,8 +11,8 @@
 	[ ] Imprimir quando receber o último checkpoint
 
 #####2. Escravos
-	[ ] Registrar no Mestre
-	[ ] Re-registrar a cada 30 segundos
+	[X] Registrar no Mestre
+	[X] Re-registrar a cada 30 segundos
 	[ ] addSlave não ocorrendo de forma concorrente
 	[ ] Testar decrypt com senhas candidatas 
 	[ ] Chamar foundGuess ao encontrar senha
@@ -21,8 +21,8 @@
 
 #####3.Cliente
 	[ ] Ler arquivo do argumento
-	[ ] Gerar arquivo aleatório, caso não encontre arquivo do argumento
-	[ ] Gerar arquivo aleatório com tamanho dado, caso não encontre arquivo do argumento
+	[X] Gerar arquivo aleatório, caso não encontre arquivo do argumento
+	[X] Gerar arquivo aleatório com tamanho dado, caso não encontre arquivo do argumento
 	[ ] Obter interface do Mestre
 	[ ] Chamar função de ataque do mestre
 	[ ] Imprimir chaves candidatas recebidas
