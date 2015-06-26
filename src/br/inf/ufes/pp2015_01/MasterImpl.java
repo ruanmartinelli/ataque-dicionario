@@ -15,14 +15,22 @@ import java.util.Map;
 
 public class MasterImpl implements Master {
 
-	private Map<String, Slave> escravos;
-	private List<ThreadDTO> workers = new ArrayList<ThreadDTO>();
+	//private Map<String, Slave> escravos;
+	//private Map<Integer, String> controleEscravos;
+	//private List<ThreadDTO> workers = new ArrayList<ThreadDTO>();
+	private Map<Integer, ThreadDTO> workers = new HashMap<Integer, ThreadDTO>();
 	static List<String> dicionario = new ArrayList<String>();
-	static List<Guess> listaguess = new ArrayList<Guess>(); 
+	static List<Guess> listaguess = new ArrayList<Guess>();
+	static Map<Integer,SlaveData> escravos;
+	static int indiceEscravo;
+	
+	private static List<Long> checkpoints;
 	
 	
 	public MasterImpl(){
-		escravos = new HashMap<String, Slave>();
+		escravos = new HashMap<Integer, SlaveData>();
+		//controleEscravos = new HashMap<Integer, String>();
+		indiceEscravo = 0;
 	}
 	
 	public static void main(String[] args) {
@@ -63,29 +71,70 @@ public class MasterImpl implements Master {
 	
 	@Override
 	public int addSlave(Slave s, String slavename) throws RemoteException {
-		for (Map.Entry<String, Slave> entry : escravos.entrySet()) {
-			if(entry.getKey().equals(slavename)){
+		int posicao;
+		for (Map.Entry<Integer, SlaveData> entry : escravos.entrySet()) {
+			if(entry.getValue().getNome().equals(slavename)){
 				System.out.println("Escravo Verificado.");
-				return 0;
+				return entry.getValue().getId();
 			}
 		}
+		SlaveData novo = new SlaveData();
+		novo.setNome(slavename);
+		novo.setSlave(s);
 			synchronized(this){
-				escravos.put(slavename,s);
+				novo.setId(indiceEscravo);
+				escravos.put(indiceEscravo, novo);
+				posicao=indiceEscravo;
+				indiceEscravo++;
 			}
 			System.out.println("Escravo Adicionado.");
-		return 0;
+		return posicao;
 	}
+	
+	
+	private long findCheckpointRemovedSlave(SlaveData escravoRemovido){
+		long maiorCheckpoint = -1;
+		for(Long cp : checkpoints){
+			if(cp <= escravoRemovido.getFim() && cp >= escravoRemovido.getInicio()){
+				maiorCheckpoint = cp;
+			}
+		}
+		return maiorCheckpoint;
+	}
+	
 	//TODO redistribui a tarefa
 	@Override
 	public void removeSlave(int slaveKey) throws RemoteException {
+		SlaveData escravoRemovido = escravos.get(slaveKey);
+		ThreadDTO threadInterrompida = workers.get(slaveKey);
+		Long ultimoIndiceEscravo = findCheckpointRemovedSlave(escravoRemovido );
+		
+		
+		//distribui
+		escravos.remove(escravoRemovido);
+		threadInterrompida.interrupt();
+		resdistribuirAttack(threadInterrompida.cipher, threadInterrompida.known, ultimoIndiceEscravo , escravoRemovido.getFim(),threadInterrompida.sm);
+		
+		
+/*		for(ThreadDTO w : workers){
+		}
+		String slavename = controleEscravos.get(slaveKey);
 		for(int i=0;i<workers.size();i++){
-			if(workers.get(i).id.equals(slaveKey)){
+			if(workers.get(i).nome.equals(slavename)){
+				workers.get(i).escravo.
 				escravos.remove(slaveKey);
-				//redistribui a tarefa dele com ATTACK;
+				//resdistribuirAttack();
+				
+				//nova função
 				workers.get(i).interrupt();
 				
 			}
 		}
+*/	
+		}
+	public void resdistribuirAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface){
+		//TODO Redistribuir o ataque
+		//Funcao ja está sendo chamada
 	}
 
 	@Override
@@ -97,6 +146,7 @@ public class MasterImpl implements Master {
 
 	@Override
 	public void checkpoint(long currentindex) throws RemoteException {
+		checkpoints.add(currentindex);
 		System.out.println("Checkpoint :"+dicionario.get((int)currentindex));
 	}
 
@@ -106,26 +156,33 @@ public class MasterImpl implements Master {
 		long tamanho = dicionario.size();
 		long pedaco = tamanho / escravos.size();
 		long from = 0, to = pedaco-1;
-		for (Map.Entry<String, Slave> entry : escravos.entrySet()) {
+		
+		for (Map.Entry<Integer, SlaveData> entry : escravos.entrySet()) {
 			
 			if (from + to > tamanho) {
 				to = tamanho-1;
-				ThreadDTO exec = new ThreadDTO(entry.getKey(),entry.getValue(),ciphertext,knowntext,from,to);
-				workers.add(exec);
+				ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,from,to);
+				entry.getValue().setInicio(from);
+				entry.getValue().setFim(to);
+				workers.put(entry.getKey(), exec);
+
 				exec.start();
 				
 			} else {
-				ThreadDTO exec = new ThreadDTO(entry.getKey(),entry.getValue(),ciphertext,knowntext,from,to);
-				workers.add(exec);
+				ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,from,to);
+				entry.getValue().setInicio(from);
+				entry.getValue().setFim(to);
+				workers.put(entry.getKey(), exec);
+				
 				exec.start();
 				from = to+1;
 				to += pedaco;
 			}
 
 		}
-		for (ThreadDTO t : workers) {
+		for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
 			try {
-				t.join();
+				entry.getValue().join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -145,13 +202,13 @@ public class MasterImpl implements Master {
 		public long inicio;
 		public long fim;
 		public final Slave escravo;
-		public String id;
+		public String nome;
 		public SlaveManager sm;
 		public byte[] cipher;
 		public byte[] known;
 
-		public ThreadDTO(String id,Slave es,byte[] ciphertext, byte[] knowntext,long initialwordindex,long finalwordindex) {
-			this.id = id;
+		public ThreadDTO(String nome,Slave es,byte[] ciphertext, byte[] knowntext,long initialwordindex,long finalwordindex) {
+			this.nome = nome;
 			this.inicio = initialwordindex;
 			this.fim = finalwordindex;
 			this.cipher = ciphertext;

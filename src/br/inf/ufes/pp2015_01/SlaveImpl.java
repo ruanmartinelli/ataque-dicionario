@@ -26,7 +26,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class SlaveImpl implements Slave{
 	
-	private String id;
+	private static int id;
+	private String nome;
 	private static Integer currentIndex = 0;
 	private static List<String> dicionario;
 	
@@ -129,7 +130,8 @@ public class SlaveImpl implements Slave{
 			}
 			currentIndex++;
 		}
-	
+		//imprime o ultimo checkpoint antes de terminar
+		callbackinterface.checkpoint(currentIndex + initialwordindex);
 	}
 	
 	/* Procura Master no Registry e retorna a interface. */
@@ -163,7 +165,7 @@ public class SlaveImpl implements Slave{
 			        new TimerTask() {  
 			            public void run() {  
 			            	try {
-								mestre.addSlave(stub, escravo.getId());
+								id = mestre.addSlave(stub, escravo.getId());
 							} catch (RemoteException e) {
 								e.printStackTrace();
 							} 
@@ -173,6 +175,20 @@ public class SlaveImpl implements Slave{
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+	}
+	/* Desregistra o escravo */
+	public void attachShutDownHook(final Master mestre) {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				try {
+					mestre.removeSlave(id);
+					System.out.println("Slave free!");
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	public static void main(String[] args) {
@@ -185,10 +201,10 @@ public class SlaveImpl implements Slave{
 	
 	//Getters and Setters
 	public String getId() {
-		return id;
+		return nome;
 	}
 	
 	public void setId(String id) {
-		this.id = id;
+		this.nome = id;
 	}
 }

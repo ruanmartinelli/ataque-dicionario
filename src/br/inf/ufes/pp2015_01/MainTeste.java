@@ -1,6 +1,8 @@
 package br.inf.ufes.pp2015_01;
 
 import java.rmi.RemoteException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
@@ -10,6 +12,7 @@ import java.util.concurrent.Executors;
 /*Para testar as funcoes localmente*/
 public class MainTeste {
 	
+	private static Map<Integer,String> ruanTaCerto = new HashMap<Integer,String>();
 	private static Master master;
 	//private static SlaveManager slaveManager;
 	private static Slave s;
@@ -19,26 +22,20 @@ public class MainTeste {
 	static int valor = 0;
 	
 	public static void main(String[] args) {
+		ruanTaCerto.put(2,"ruan");
+		ruanTaCerto.put(2,"bruno");
+		ruanTaCerto.put(4,"brenda");
+		ruanTaCerto.put(1,"helena");
 		
-		Timer timer = new Timer();  
-		timer.scheduleAtFixedRate(  
-		        new TimerTask() {  
-		            public void run() {  
-							System.out.println("int = " + valor);
-		            }  
-		        }, 0, 5000);
 		
-		for(int i=0;i<1000000000;i++){
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			valor++;
+		
+		//ruanTaCerto.remove(2);
+		
+		System.out.println(ruanTaCerto.get(2));
 		}
 			
 	}
 	
 	
 	
-}
+
