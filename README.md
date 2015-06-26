@@ -3,11 +3,11 @@
 #####1. Mestre
 	[X] Registrar no Registry
 	[X] Dividir o dicionário corretamente
-	[ ] Solicitandar ataque por startSubAttack
+	[X] Solicitandar ataque por startSubAttack
 	[ ] Redirecionar trabalho caso o escravo gere uma exceção
 	[ ] Redirecionar trabalho caso o escravo não responda em 20 segundos
 	[ ] Imprimir mensagem dos callbacks recebidos dos escravos
-	[ ] Imprimir tempo e índice atual "a partir de startSubAttack" para cada checkpoint
+	[ ] Imprimir tempo(que tempo?) e índice atual "a partir de startSubAttack" para cada checkpoint
 	[ ] Imprimir quando receber o último checkpoint
 	[ ] Acertar ID dos escravos para ler na HashMap do Mestre
 
@@ -17,15 +17,15 @@
 	[ ] addSlave não ocorrendo de forma concorrente
 	[ ] Testar decrypt com senhas candidatas 
 	[ ] Chamar foundGuess ao encontrar senha
-	[ ] Enviar checkpoints a cada 10 segundos
-	[ ] Enviar checkpoint final ao terminar a tarefa
+	[X] Enviar checkpoints a cada 10 segundos
+	[X] Enviar checkpoint final ao terminar a tarefa
 
 #####3.Cliente
 	[ ] Ler arquivo do argumento
 	[X] Gerar arquivo aleatório, caso não encontre arquivo do argumento
 	[X] Gerar arquivo aleatório com tamanho dado, caso não encontre arquivo do argumento
-	[ ] Obter interface do Mestre
-	[ ] Chamar função de ataque do mestre
+	[X] Obter interface do Mestre
+	[X] Chamar função de ataque do mestre
 	[ ] Imprimir chaves candidatas recebidas
 	[ ] Colocar essas chaves em arquivos com nome <chave>.msg
 	
