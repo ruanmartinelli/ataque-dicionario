@@ -8,7 +8,7 @@
 	[ ] Redirecionar trabalho caso o escravo não responda em 20 segundos
 	[ ] Imprimir mensagem dos callbacks recebidos dos escravos
 	[ ] Imprimir tempo(que tempo?) e índice atual "a partir de startSubAttack" para cada checkpoint
-	[ ] Imprimir quando receber o último checkpoint
+	[X] Imprimir quando receber o último checkpoint
 	[ ] Acertar ID dos escravos para ler na HashMap do Mestre
 
 #####2. Escravos
