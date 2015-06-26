@@ -6,7 +6,7 @@
 	[X] Solicitandar ataque por startSubAttack
 	[ ] Redirecionar trabalho caso o escravo gere uma exceção
 	[ ] Redirecionar trabalho caso o escravo não responda em 20 segundos
-	[ ] Imprimir mensagem dos callbacks recebidos dos escravos
+	[X] Imprimir mensagem dos callbacks recebidos dos escravos
 	[ ] Imprimir tempo(que tempo?) e índice atual "a partir de startSubAttack" para cada checkpoint
 	[X] Imprimir quando receber o último checkpoint
 	[ ] Acertar ID dos escravos para ler na HashMap do Mestre
@@ -14,7 +14,7 @@
 #####2. Escravos
 	[X] Registrar no Mestre
 	[X] Re-registrar a cada 30 segundos
-	[ ] addSlave não ocorrendo de forma concorrente
+	[ ] addSlave não ocorrendo de forma concorrente (??????não?????)
 	[ ] Testar decrypt com senhas candidatas 
 	[X] Chamar foundGuess ao encontrar senha
 	[X] Enviar checkpoints a cada 10 segundos
