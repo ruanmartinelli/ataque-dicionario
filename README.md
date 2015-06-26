@@ -9,6 +9,7 @@
 	[ ] Imprimir mensagem dos callbacks recebidos dos escravos
 	[ ] Imprimir tempo e índice atual "a partir de startSubAttack" para cada checkpoint
 	[ ] Imprimir quando receber o último checkpoint
+	[ ] Acertar ID dos escravos para ler na HashMap do Mestre
 
 #####2. Escravos
 	[X] Registrar no Mestre
