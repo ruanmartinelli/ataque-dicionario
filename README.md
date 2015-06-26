@@ -19,6 +19,7 @@
 	[X] Chamar foundGuess ao encontrar senha
 	[X] Enviar checkpoints a cada 10 segundos
 	[X] Enviar checkpoint final ao terminar a tarefa
+	[X] Adicionar AttachShutDownHook chamando o removeSlave
 
 #####3.Cliente
 	[ ] Ler arquivo do argumento
