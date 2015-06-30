@@ -90,12 +90,6 @@ public class ClienteMain {
 		} catch (RemoteException e) {
 			System.out.println("[DEBUG]: Erro na execucao do Mestre");
 		}
-		System.out.println("Resultado.length: "+ resultado.length );
-		for(int i=0;i<resultado.length;i++){
-			System.out.println("Chave: "+resultado[i].getKey());
-			System.out.println("Mensagem: "+resultado[i].getMessage());
-		}
-
 	}
 
 }

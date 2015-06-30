@@ -149,7 +149,7 @@ public class MasterImpl implements Master {
 	@Override
 	public void checkpoint(long currentindex) throws RemoteException {
 		checkpoints.add(currentindex);
-		System.out.println("Checkpoint :"+dicionario.get((int)currentindex));
+		System.out.println("Checkpoint :"+dicionario.get((int)currentindex)+"Pos: "+currentindex);
 	}
 
 	@Override
@@ -184,21 +184,18 @@ public class MasterImpl implements Master {
 			}
 
 		}
-		/*for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
+		for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
 			try {
 				entry.getValue().join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}*/
-		
+		}
 		Guess[] resultados = new Guess[listaguess.size()];
 		for (Guess g : listaguess){
 			int cont=0;
 			resultados[cont] = g;
 			cont++;
-			System.out.println(g.getKey());
-			System.out.println(g.getMessage());
 		}
 		
 		return resultados;

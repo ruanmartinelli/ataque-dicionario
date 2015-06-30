@@ -27,8 +27,9 @@ public class SlaveImpl implements Slave{
 	
 	private static int id;
 	private String nome;
-	private Integer currentIndex = 0;
+	private long currentIndex = 0;
 	private static List<String> dicionario = new ArrayList<String>();
+	private SlaveManager sm;
 	
 	public SlaveImpl(){
 	}
@@ -72,7 +73,7 @@ public class SlaveImpl implements Slave{
 			SecretKeySpec keySpec = new SecretKeySpec(chave, "Blowfish");
 			
 			byte[] message = ciphertext;
-			System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
+			//System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
 			
 			Cipher cipher = Cipher.getInstance("Blowfish");
 			cipher.init(Cipher.DECRYPT_MODE, keySpec);
@@ -82,7 +83,7 @@ public class SlaveImpl implements Slave{
 		}catch (javax.crypto.BadPaddingException a) {
 			// essa excecao e jogada quando a senha esta incorreta
 			// porem nao quer dizer que a senha esta correta se nao jogar essa excecao
-			System.out.println("Senha invalida.");
+			//System.out.println("Senha invalida.");
 			return decrypted;
 		
 		
@@ -109,17 +110,17 @@ public class SlaveImpl implements Slave{
 	
 	@Override
 	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
-		final long aux = currentIndex + initialwordindex;
-		final SlaveManager aux2 =  callbackinterface;
-		Guess candidata = new Guess();
-		//System.out.println("CurrentIndex + initialwordindex = "+aux);//<------ ta Zero aqui.
+		//final long aux = currentIndex + initialwordindex;
+		long cachorro = initialwordindex;
+		currentIndex = initialwordindex;
+		sm =  callbackinterface;
 		//Checkpoint a cada 10 segundos
 				Timer timer = new Timer();  
 				timer.scheduleAtFixedRate(  
 				        new TimerTask() {  
 				            public void run() {  
 				            	try {
-				            		aux2.checkpoint(aux);
+				            		sm.checkpoint(SlaveImpl.this.currentIndex-1);
 								} catch (RemoteException e) {
 									e.printStackTrace();
 								}
@@ -127,18 +128,16 @@ public class SlaveImpl implements Slave{
 				        }, 10000, 10000);
 		
 		for(String palavra : getSublista(longToIntSeguro(initialwordindex),longToIntSeguro(finalwordindex))){
-			byte[] resposta = decrypt(palavra, ciphertext);
-			System.out.println("Resposta apos dar decrypt: "+resposta);//<------ aqui ta null;
-			System.out.println("ciphertext: "+ciphertext);
-			if(resposta != null)
-				System.out.println("IndexOf: "+indexOf(resposta, knowntext));			
-
+			byte[] resposta = decrypt(palavra, ciphertext);			
+			
 			if(resposta != null && indexOf(resposta, knowntext) != -1){
+				Guess candidata = new Guess();
 				candidata.setKey(palavra);
 				candidata.setMessage(resposta);
-				callbackinterface.foundGuess(currentIndex + initialwordindex, candidata);
+				System.out.println("@Current ante de mandar: "+cachorro);
+				callbackinterface.foundGuess(cachorro, candidata);
 			}
-			currentIndex++;
+			cachorro++;
 		}
 		//imprime o ultimo checkpoint antes de terminar
 		//aux2.checkpoint(currentIndex);
