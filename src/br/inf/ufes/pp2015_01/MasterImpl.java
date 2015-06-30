@@ -1,5 +1,4 @@
 package br.inf.ufes.pp2015_01;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -21,14 +20,14 @@ public class MasterImpl implements Master {
 	private Map<Integer, ThreadDTO> workers = new HashMap<Integer, ThreadDTO>();
 	static List<String> dicionario = new ArrayList<String>();
 	static List<Guess> listaguess = new ArrayList<Guess>();
-	static Map<Integer,SlaveData> escravos;
+	static Map<Integer,SlaveData> escravos = new HashMap<Integer, SlaveData>();
 	static int indiceEscravo;
+	static Master ref; 
 	
-	private static List<Long> checkpoints;
+	private static List<Long> checkpoints = new ArrayList<Long>();
 	
 	
 	public MasterImpl(){
-		escravos = new HashMap<Integer, SlaveData>();
 		//controleEscravos = new HashMap<Integer, String>();
 		indiceEscravo = 0;
 	}
@@ -57,10 +56,12 @@ public class MasterImpl implements Master {
 		try {
 			MasterImpl obj = new MasterImpl();
 
-			Master ref = (Master) UnicastRemoteObject.exportObject(obj,2002);
+			ref = (Master) UnicastRemoteObject.exportObject(obj,2002);
 
 			Registry registry = LocateRegistry.getRegistry();
 			registry.rebind("mestre", ref);
+			obj.attachShutDownHook();
+
 			System.out.println("Master registered!");
 		} catch (RemoteException e) {
 			e.printStackTrace();
@@ -112,6 +113,7 @@ public class MasterImpl implements Master {
 		
 		//distribui
 		escravos.remove(escravoRemovido);
+		System.out.println("Escravo Removido.");
 		threadInterrompida.interrupt();
 		resdistribuirAttack(threadInterrompida.cipher, threadInterrompida.known, ultimoIndiceEscravo , escravoRemovido.getFim(),threadInterrompida.sm);
 		
@@ -125,7 +127,7 @@ public class MasterImpl implements Master {
 				escravos.remove(slaveKey);
 				//resdistribuirAttack();
 				
-				//nova função
+				//nova funcao
 				workers.get(i).interrupt();
 				
 			}
@@ -134,7 +136,7 @@ public class MasterImpl implements Master {
 		}
 	public void resdistribuirAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface){
 		//TODO Redistribuir o ataque
-		//Funcao ja está sendo chamada
+		//Funcao ja esta sendo chamada
 	}
 
 	@Override
@@ -152,14 +154,15 @@ public class MasterImpl implements Master {
 
 	@Override
 	public Guess[] attack(byte[] ciphertext, byte[] knowntext) {
-		
+		//nao tratamos o caso para dicionarios com 1 palavra;
 		long tamanho = dicionario.size();
+		System.out.println(tamanho);
 		long pedaco = tamanho / escravos.size();
+		System.out.println("PedaÃ§o: "+pedaco);
 		long from = 0, to = pedaco-1;
 		
 		for (Map.Entry<Integer, SlaveData> entry : escravos.entrySet()) {
-			
-			if (from + to > tamanho) {
+			if (from + to >= tamanho) {
 				to = tamanho-1;
 				ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,from,to);
 				entry.getValue().setInicio(from);
@@ -175,27 +178,44 @@ public class MasterImpl implements Master {
 				workers.put(entry.getKey(), exec);
 				
 				exec.start();
-				from = to+1;
-				to += pedaco;
+				to++;
+				from = to;
+				to += pedaco-1;
 			}
 
 		}
-		for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
+		/*for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
 			try {
 				entry.getValue().join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
-
+		}*/
+		
 		Guess[] resultados = new Guess[listaguess.size()];
 		for (Guess g : listaguess){
 			int cont=0;
 			resultados[cont] = g;
 			cont++;
+			System.out.println(g.getKey());
+			System.out.println(g.getMessage());
 		}
 		
 		return resultados;
+	}
+
+	public void attachShutDownHook() {
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+
+				/* Remove todos escravos da lista em caso de mestre offline */
+				for (Map.Entry<Integer, SlaveData> es : escravos.entrySet()) {
+					escravos.remove(es);
+				}
+				System.out.println("Master down, slaves are free.");
+			}
+		});
 	}
 	/* Inner class para auxiliar*/
 	public class ThreadDTO extends Thread {
@@ -220,8 +240,7 @@ public class MasterImpl implements Master {
 		@Override
 		public void run() {
 				try {
-					escravo.startSubAttack(cipher,known,inicio,fim,sm);
-					
+					escravo.startSubAttack(cipher,known,inicio,fim,ref);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}

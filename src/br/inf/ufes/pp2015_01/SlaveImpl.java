@@ -1,5 +1,4 @@
 package br.inf.ufes.pp2015_01;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -28,11 +27,10 @@ public class SlaveImpl implements Slave{
 	
 	private static int id;
 	private String nome;
-	private static Integer currentIndex = 0;
-	private static List<String> dicionario;
+	private Integer currentIndex = 0;
+	private static List<String> dicionario = new ArrayList<String>();
 	
 	public SlaveImpl(){
-		dicionario = new ArrayList<String>();
 	}
 	
 	/* Gera Dicionario. */
@@ -66,14 +64,14 @@ public class SlaveImpl implements Slave{
 	}
 	
 	public static byte[] decrypt(String key, byte[] ciphertext){
-		byte[] chave =  new byte[key.length()];
-		byte[] message = new byte[ciphertext.length];
+		//chave =  new byte[key.length()];
+		//message = new byte[ciphertext.length];
 		byte[] decrypted = null;
 		try{
-			chave = key.getBytes();
+			byte[] chave = key.getBytes();
 			SecretKeySpec keySpec = new SecretKeySpec(chave, "Blowfish");
 			
-			message = ciphertext;
+			byte[] message = ciphertext;
 			System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
 			
 			Cipher cipher = Cipher.getInstance("Blowfish");
@@ -81,9 +79,16 @@ public class SlaveImpl implements Slave{
 			decrypted = cipher.doFinal(message);
 			
 			return decrypted;
-		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+		}catch (javax.crypto.BadPaddingException a) {
+			// essa excecao e jogada quando a senha esta incorreta
+			// porem nao quer dizer que a senha esta correta se nao jogar essa excecao
+			System.out.println("Senha invalida.");
+			return decrypted;
+		
+		
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException e) {
 			System.out.println("[ERRO]: Erro ao decriptografar mensagem com a chave "+ key);
-			e.printStackTrace();
+			//e.printStackTrace();
 			return decrypted;
 		}
 	}
@@ -104,26 +109,31 @@ public class SlaveImpl implements Slave{
 	
 	@Override
 	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
-		
+		final long aux = currentIndex + initialwordindex;
+		final SlaveManager aux2 =  callbackinterface;
 		Guess candidata = new Guess();
-		
+		//System.out.println("CurrentIndex + initialwordindex = "+aux);//<------ ta Zero aqui.
 		//Checkpoint a cada 10 segundos
 				Timer timer = new Timer();  
 				timer.scheduleAtFixedRate(  
 				        new TimerTask() {  
 				            public void run() {  
 				            	try {
-				            		callbackinterface.checkpoint(currentIndex + initialwordindex);
+				            		aux2.checkpoint(aux);
 								} catch (RemoteException e) {
 									e.printStackTrace();
-								} 
+								}
 				            }  
 				        }, 10000, 10000);
 		
 		for(String palavra : getSublista(longToIntSeguro(initialwordindex),longToIntSeguro(finalwordindex))){
 			byte[] resposta = decrypt(palavra, ciphertext);
-			
-			if(resposta!= null && indexOf(ciphertext, resposta) != -1){
+			System.out.println("Resposta apos dar decrypt: "+resposta);//<------ aqui ta null;
+			System.out.println("ciphertext: "+ciphertext);
+			if(resposta != null)
+				System.out.println("IndexOf: "+indexOf(resposta, knowntext));			
+
+			if(resposta != null && indexOf(resposta, knowntext) != -1){
 				candidata.setKey(palavra);
 				candidata.setMessage(resposta);
 				callbackinterface.foundGuess(currentIndex + initialwordindex, candidata);
@@ -131,7 +141,8 @@ public class SlaveImpl implements Slave{
 			currentIndex++;
 		}
 		//imprime o ultimo checkpoint antes de terminar
-		callbackinterface.checkpoint(currentIndex + initialwordindex);
+		//aux2.checkpoint(currentIndex);
+		//Thread.interrupted();
 	}
 	
 	/* Procura Master no Registry e retorna a interface. */
@@ -152,12 +163,13 @@ public class SlaveImpl implements Slave{
 	}
 	
 	private static void registerSlave(Master mestre){
-		SlaveImpl escravo = new SlaveImpl();
+		final Master aux3 = mestre;
+		final SlaveImpl escravo = new SlaveImpl();
 		try {
 			escravo.setId(UUID.randomUUID().toString());
 			
 			//Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 2001);
-			Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
+			final Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
 			
 			//chama addSlave de 30 em 30 segundos
 			Timer timer = new Timer();  
@@ -165,10 +177,10 @@ public class SlaveImpl implements Slave{
 			        new TimerTask() {  
 			            public void run() {  
 			            	try {
-								id = mestre.addSlave(stub, escravo.getId());
+								id = aux3.addSlave(stub, escravo.getId());
 							} catch (RemoteException e) {
 								e.printStackTrace();
-							} 
+							}
 			            }  
 			        }, 0, 30000);
 			
@@ -177,7 +189,7 @@ public class SlaveImpl implements Slave{
 		}
 	}
 	/* Desregistra o escravo */
-	public void attachShutDownHook(final Master mestre) {
+	public static void attachShutDownHook(final Master mestre) {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
@@ -192,9 +204,10 @@ public class SlaveImpl implements Slave{
 	}
 
 	public static void main(String[] args) {
-		makeDicionario();
 		
+		makeDicionario();
 		registerSlave(getMaster(""));
+		attachShutDownHook(getMaster(""));
 		
 	}
 	

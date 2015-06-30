@@ -1,5 +1,4 @@
 package br.inf.ufes.pp2015_01;
-
 public class SlaveData {
 	private String nome;
 	private int id;

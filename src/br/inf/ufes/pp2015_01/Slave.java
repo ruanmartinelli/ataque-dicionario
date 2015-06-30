@@ -2,7 +2,6 @@
  * Slave.java
  */
 package br.inf.ufes.pp2015_01;
-
 import java.rmi.Remote;
 
 public interface Slave extends Remote {

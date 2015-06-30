@@ -1,5 +1,4 @@
 package br.inf.ufes.pp2015_01;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -68,6 +67,7 @@ public class ClienteMain {
 		String fileName = args[2];
 		byte[] palavraConhecida = args[1].getBytes();
 		byte[] byteArray = null;
+		Guess[] resultado = new Guess[400];
 
 		Path path = Paths.get(fileName);
 		try {
@@ -85,12 +85,22 @@ public class ClienteMain {
 		Master master = findMaster(args[0]);
 
 		try {
-			master.attack(byteArray, palavraConhecida);
+			resultado = master.attack(byteArray, palavraConhecida);
 
 		} catch (RemoteException e) {
 			System.out.println("[DEBUG]: Erro na execucao do Mestre");
+		}
+		System.out.println("Resultado.length: "+ resultado.length );
+		for(int i=0;i<resultado.length;i++){
+			System.out.println("Chave: "+resultado[i].getKey());
+			System.out.println("Mensagem: "+resultado[i].getMessage());
 		}
 
 	}
 
 }
+
+
+
+
+
