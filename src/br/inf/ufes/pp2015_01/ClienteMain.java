@@ -24,6 +24,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
+@SuppressWarnings("unused")
 public class ClienteMain {
 
 	private static String fileName;
@@ -213,61 +214,70 @@ public class ClienteMain {
 		}
 	}
 	
+	
 	public static void main(String[] args) {
 
 		/*
 		 * Argumentos: 
-		 * args[0]: endereco do mestre 
-		 * args[1]: palavra conhecida
-		 * args[2]: nome do arquivo criptografado 
-		 * args[3]: tamanho do vetor
-		 * args[4]: tipo de relatorio gerado
+		 * 
+		 * [0]: tipo de execucao
+		 * 
+		 * [1P]: endereco do mestre
+		 * [2P]: palavra conhecida
+		 * [3P]: arquivo MC
+		 * [4P]: nome do arquivo
+		 * [5P - OPCIONAL]: tamanho do vetor
+		 * 
+		 * [1S]: palavra conhecida
+		 * [2S]: arquivo MC
+		 * [3S]: nome do arquivo 
+		 *  
 		 */
+		if(args[0].equals("paralelo")){
+			fileName 		= args[3];
+			palavraConhecida = args[2].getBytes();
+			byteArray 		= null;
+			resultado 		= new Guess[400];
 
-		fileName 		= args[2];
-		palavraConhecida = args[1].getBytes();
-		byteArray 		= null;
-		resultado 		= new Guess[400];
-
-		Path path = Paths.get(fileName);
-		try {
-			byteArray = Files.readAllBytes(path);
-		} catch (IOException e1) {
-			System.out.println("[DEBUG]: Arquivo" + fileName +" nao encontrado.");
-			if (args.length > 3) {
-				byteArray = geraArquivo(Integer.parseInt(args[3]));
-			} else {
-				byteArray = geraArquivo();
+			Path path = Paths.get(fileName);
+			try {
+				byteArray = Files.readAllBytes(path);
+			} catch (IOException e1) {
+				System.out.println("[DEBUG]: Arquivo" + fileName +" nao encontrado.");
+				if (args.length > 5) {
+					byteArray = geraArquivo(Integer.parseInt(args[4]));
+				} else {
+					byteArray = geraArquivo();
+				}
 			}
-		}
-		
-		Attacker master = findMaster(args[0]);
-		if(args[0] != null){
+			Attacker master = findMaster(args[1]);
+			
+			/*
 			try {
 				resultado = master.attack(byteArray, palavraConhecida);
 				
 			} catch (RemoteException e) {
 				System.out.println("[DEBUG]: Erro na execucao do Mestre");
 			}
-		}
-		if(resultado.length > 0){
-			try {
-				for(int i = 0 ; i < resultado.length ; i++){
-					FileOutputStream fos = new FileOutputStream(resultado[i].getKey()+".msg");
-					fos.write(resultado[i].getMessage());
-					fos.close();
+			
+			if(resultado.length > 0){
+				try {
+					for(int i = 0 ; i < resultado.length ; i++){
+						FileOutputStream fos = new FileOutputStream(resultado[i].getKey()+".msg");
+						fos.write(resultado[i].getMessage());
+						fos.close();
+					}
+				} catch (IOException e) {
+					System.out.println("[DEBUG]: Erro ao escrever Arquivo msg");
 				}
-			} catch (IOException e) {
-				System.out.println("[DEBUG]: Erro ao escrever Arquivo msg");
 			}
+			 */			
+			gerarCsv(args[4], palavraConhecida, master);
 		}
-
-		/* CSVs */
-		if(args[4] != null && byteArray != null && palavraConhecida != null){
-			gerarCsvSerial(args[4],palavraConhecida);
-			//gerarCsv(args[4],palavraConhecida, master);
+		
+		if(args[0].equals("serial")){
+			gerarCsvSerial(args[3], palavraConhecida);
 		}
-		/* CSVs */		
 	}
 
 }
