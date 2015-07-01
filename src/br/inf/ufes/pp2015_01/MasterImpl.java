@@ -1,4 +1,4 @@
-package br.inf.ufes.pp2015_01;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -20,6 +20,7 @@ public class MasterImpl implements Master {
 	private Map<Integer, ThreadDTO> workers = new HashMap<Integer, ThreadDTO>();
 	static List<String> dicionario = new ArrayList<String>();
 	static List<Guess> listaguess = new ArrayList<Guess>();
+	static Map<Long,Long> listafaltosos = new HashMap<Long,Long>();
 	static Map<Integer,SlaveData> escravos = new HashMap<Integer, SlaveData>();
 	static int indiceEscravo;
 	static Master ref; 
@@ -92,7 +93,7 @@ public class MasterImpl implements Master {
 		return posicao;
 	}
 	
-	
+	//pega o ultimo checkpoint dado antes de um escravo morrer
 	private long findCheckpointRemovedSlave(SlaveData escravoRemovido){
 		long maiorCheckpoint = -1;
 		for(Long cp : checkpoints){
@@ -100,43 +101,62 @@ public class MasterImpl implements Master {
 				maiorCheckpoint = cp;
 			}
 		}
+		System.out.println("Maior ckeckpoint: "+maiorCheckpoint);
 		return maiorCheckpoint;
 	}
 	
-	//TODO redistribui a tarefa
+	//remove escravo e guarda o pedaco faltoso para distribuir
 	@Override
 	public void removeSlave(int slaveKey) throws RemoteException {
 		SlaveData escravoRemovido = escravos.get(slaveKey);
 		ThreadDTO threadInterrompida = workers.get(slaveKey);
-		Long ultimoIndiceEscravo = findCheckpointRemovedSlave(escravoRemovido );
-		
-		
-		//distribui
-		escravos.remove(escravoRemovido);
+		//pega ultimo checkpoint para saber oque falta fazer
+		long ultimoIndiceEscravo = findCheckpointRemovedSlave(escravoRemovido );
+		guardaPedaco(ultimoIndiceEscravo,escravoRemovido.getFim());
+
+		escravos.remove(escravoRemovido.getId());
 		System.out.println("Escravo Removido.");
 		threadInterrompida.interrupt();
-		resdistribuirAttack(threadInterrompida.cipher, threadInterrompida.known, ultimoIndiceEscravo , escravoRemovido.getFim(),threadInterrompida.sm);
-		
-		
-/*		for(ThreadDTO w : workers){
+
 		}
-		String slavename = controleEscravos.get(slaveKey);
-		for(int i=0;i<workers.size();i++){
-			if(workers.get(i).nome.equals(slavename)){
-				workers.get(i).escravo.
-				escravos.remove(slaveKey);
-				//resdistribuirAttack();
+	public void guardaPedaco(long inicial,long fim){
+		listafaltosos.put(inicial,fim);
+	}
+	public void redistribuirAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex){
+
+		for (Map.Entry<Integer, SlaveData> entry : escravos.entrySet()) {
+			ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,initialwordindex,finalwordindex);
+			entry.getValue().setInicio(initialwordindex);
+			entry.getValue().setFim(finalwordindex);
+			workers.put(entry.getKey(), exec);
+			exec.start();
+			return;
+		}
+
+		/*for (Map.Entry<Integer, SlaveData> entry : escravos.entrySet()) {
+			if (from + to >= tamanho) {
+				to = tamanho-1;
+				ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,from,to);
+				entry.getValue().setInicio(from);
+				entry.getValue().setFim(to);
+				workers.put(entry.getKey(), exec);
+
+				exec.start();
 				
-				//nova funcao
-				workers.get(i).interrupt();
+			} else {
+				ThreadDTO exec = new ThreadDTO(entry.getValue().getNome(),entry.getValue().getSlave(),ciphertext,knowntext,from,to);
+				entry.getValue().setInicio(from);
+				entry.getValue().setFim(to);
+				workers.put(entry.getKey(), exec);
 				
+				exec.start();
+				to++;
+				from = to;
+				to += pedaco-1;
 			}
-		}
-*/	
-		}
-	public void resdistribuirAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface){
-		//TODO Redistribuir o ataque
-		//Funcao ja esta sendo chamada
+
+		}*/
+		
 	}
 
 	@Override
@@ -149,7 +169,7 @@ public class MasterImpl implements Master {
 	@Override
 	public void checkpoint(long currentindex) throws RemoteException {
 		checkpoints.add(currentindex);
-		System.out.println("Checkpoint :"+dicionario.get((int)currentindex)+"Pos: "+currentindex);
+		System.out.println("Checkpoint :"+dicionario.get((int)currentindex)+" Pos: "+currentindex);
 	}
 
 	@Override
@@ -184,6 +204,7 @@ public class MasterImpl implements Master {
 			}
 
 		}
+		//espera as threads morreram
 		for (Map.Entry<Integer, ThreadDTO> entry : workers.entrySet()){
 			try {
 				entry.getValue().join();
@@ -191,6 +212,11 @@ public class MasterImpl implements Master {
 				e.printStackTrace();
 			}
 		}
+		//redistribui ataque dos pedaços faltosos
+		for(Map.Entry<Long, Long> l : listafaltosos.entrySet()){
+			redistribuirAttack(ciphertext,knowntext,l.getKey(),l.getValue());
+		}
+		//finaliza a lista de resultado para retornar
 		Guess[] resultados = new Guess[listaguess.size()];
 		for (Guess g : listaguess){
 			int cont=0;

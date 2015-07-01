@@ -1,4 +1,4 @@
-package br.inf.ufes.pp2015_01;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -110,8 +110,6 @@ public class SlaveImpl implements Slave{
 	
 	@Override
 	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
-		//final long aux = currentIndex + initialwordindex;
-		long cachorro = initialwordindex;
 		currentIndex = initialwordindex;
 		sm =  callbackinterface;
 		//Checkpoint a cada 10 segundos
@@ -125,8 +123,8 @@ public class SlaveImpl implements Slave{
 									e.printStackTrace();
 								}
 				            }  
-				        }, 10000, 10000);
-		
+				        }, 1000, 10000);
+		System.out.println("Initial antes do for: "+initialwordindex+" final: "+finalwordindex);
 		for(String palavra : getSublista(longToIntSeguro(initialwordindex),longToIntSeguro(finalwordindex))){
 			byte[] resposta = decrypt(palavra, ciphertext);			
 			
@@ -134,13 +132,13 @@ public class SlaveImpl implements Slave{
 				Guess candidata = new Guess();
 				candidata.setKey(palavra);
 				candidata.setMessage(resposta);
-				System.out.println("@Current ante de mandar: "+cachorro);
-				callbackinterface.foundGuess(cachorro, candidata);
+				System.out.println("@Current ante de mandar: "+currentIndex);
+				callbackinterface.foundGuess(currentIndex, candidata);
 			}
-			cachorro++;
+			currentIndex++;
 		}
 		//imprime o ultimo checkpoint antes de terminar
-		//aux2.checkpoint(currentIndex);
+		//sm.checkpoint(currentIndex);
 		//Thread.interrupted();
 	}
 	
