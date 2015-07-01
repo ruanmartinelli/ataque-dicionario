@@ -1,6 +1,10 @@
 package br.inf.ufes.pp2015_01;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,11 +12,29 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
 public class ClienteMain {
 
+	private static String fileName;
+	private static byte[] palavraConhecida;
+	private static byte[] byteArray;
+	private static Guess[] resultado;
+	
+	public ClienteMain(){
+		
+	}
+	
 	/* Gera arquivo de tamanho aleatorio caso nao seja passado um vetor. */
 	private static byte[] geraArquivo() {
 		Random r = new Random();
@@ -42,7 +64,7 @@ public class ClienteMain {
 	}
 
 	/* Procura mestre no Registry e retorna a interface encontrada. */
-	private static Master findMaster(String host) {
+	private static Attacker findMaster(String host) {
 		Registry registry;
 		Master stub = null;
 		try {
@@ -54,6 +76,143 @@ public class ClienteMain {
 		return stub;
 	}
 
+	public static byte[] decrypt(String key, byte[] ciphertext){
+		//chave =  new byte[key.length()];
+		//message = new byte[ciphertext.length];
+		byte[] decrypted = null;
+		try{
+			byte[] chave = key.getBytes();
+			SecretKeySpec keySpec = new SecretKeySpec(chave, "Blowfish");
+			
+			byte[] message = ciphertext;
+			//System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
+			
+			Cipher cipher = Cipher.getInstance("Blowfish");
+			cipher.init(Cipher.DECRYPT_MODE, keySpec);
+			decrypted = cipher.doFinal(message);
+			
+			return decrypted;
+		}catch (javax.crypto.BadPaddingException a) {
+			// essa excecao e jogada quando a senha esta incorreta
+			// porem nao quer dizer que a senha esta correta se nao jogar essa excecao
+			//System.out.println("Senha invalida.");
+			return decrypted;
+		
+		
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException e) {
+			System.out.println("[ERRO]: Erro ao decriptografar mensagem com a chave "+ key);
+			//e.printStackTrace();
+			return decrypted;
+		}
+	}
+
+	public static int indexOf(byte[] outerArray, byte[] smallerArray) {
+	    for(int i = 0; i < outerArray.length - smallerArray.length+1; ++i) {
+	        boolean found = true;
+	        for(int j = 0; j < smallerArray.length; ++j) {
+	           if (outerArray[i+j] != smallerArray[j]) {
+	               found = false;
+	               break;
+	           }
+	        }
+	        if (found) return i;
+	     }
+	   return -1;  
+	}
+	
+	private static void ataqueSerial(byte[] ciphertext, byte[] knowntext){
+		/* Armazena o Dicionario em uma lista */
+		List<String> dicionario = new ArrayList<String>();
+		try {
+			BufferedReader br = null;
+			String linha;
+			br = new BufferedReader(new FileReader("dictionary.txt"));
+			
+			/* Varre cada linha do Dicionario.*/
+			while ((linha = br.readLine()) != null) {
+				dicionario.add(linha);
+			}
+			br.close();
+		} catch (IOException e1) {
+			System.out.println("[DEBUG]: Arquivo dicionario do escravo nao encontrado.");
+		}
+		
+		int index = 0;
+		for(String palavra : dicionario){
+			byte[] resposta = decrypt(palavra, ciphertext);	
+			
+			if(resposta != null && indexOf(resposta, knowntext) != -1){
+				Guess candidata = new Guess();
+				candidata.setKey(palavra);
+				candidata.setMessage(resposta);
+				System.out.println("[INFO]: Guess encontrada");
+				System.out.println("	Chave: " + palavra + " / " + index);
+			}
+			index++;
+		}
+		System.out.println("[INFO]: Ataque serial concluído.");
+	}
+	
+	private static void gerarCsvSerial(String argumento, byte[] palavraConhecida){
+		String nome = "[csv-filename-not-given]";
+		StringBuilder texto = new StringBuilder();
+		nome = argumento;
+		try {
+			PrintWriter csv = new PrintWriter(nome + ".csv");
+			
+			for(int i = 1000 ; i < 100000 ; i = i + 500){
+				byte[] msg = geraArquivo(i);
+				Long begin = System.nanoTime();
+				ataqueSerial(msg, palavraConhecida);
+				Long end = System.nanoTime();
+				
+				Long tempoTotal = end - begin;
+				
+				texto.append(i);
+				texto.append(",");
+				texto.append(tempoTotal / 1000000000.0);
+				texto.append("\n");
+				
+				csv.write(texto.toString()); /*Grafico TEMPO DE RESPOSTA x TAMANHO DA MENSAGEM*/
+				texto.setLength(0);
+			}
+			
+			csv.close();
+		} catch (FileNotFoundException e1) {
+			System.out.println("[ERRO]: Erro gerar arquivos CSVs.");
+		}
+	}
+	
+	private static void gerarCsv(String argumento, byte[] palavraConhecida, Attacker servicoAtaque){
+		String nome = "[csv-filename-not-given]";
+		StringBuilder texto = new StringBuilder();
+		nome = argumento;
+		try {
+			PrintWriter csv = new PrintWriter(nome + ".csv");
+			
+			for(int i = 1000 ; i < 100000 ; i = i + 500){
+				byte[] msg = geraArquivo(i);
+				Long begin = System.nanoTime();
+				servicoAtaque.attack(msg, palavraConhecida);
+				Long end = System.nanoTime();
+				
+				Long tempoTotal = end - begin;
+				
+				texto.append(i);
+				texto.append(",");
+				texto.append(tempoTotal / 1000000000.0);
+				texto.append("\n");
+				
+				csv.write(texto.toString()); /*Grafico TEMPO DE RESPOSTA x TAMANHO DA MENSAGEM*/
+				texto.setLength(0);
+			}
+			
+			csv.close();
+		} catch (FileNotFoundException | RemoteException e1) {
+			System.out.println("[ERRO]: Erro gerar arquivos CSVs.");
+		}
+	}
+	
 	public static void main(String[] args) {
 
 		/*
@@ -62,12 +221,13 @@ public class ClienteMain {
 		 * args[1]: palavra conhecida
 		 * args[2]: nome do arquivo criptografado 
 		 * args[3]: tamanho do vetor
+		 * args[4]: tipo de relatorio gerado
 		 */
 
-		String fileName = args[2];
-		byte[] palavraConhecida = args[1].getBytes();
-		byte[] byteArray = null;
-		Guess[] resultado = new Guess[400];
+		fileName 		= args[2];
+		palavraConhecida = args[1].getBytes();
+		byteArray 		= null;
+		resultado 		= new Guess[400];
 
 		Path path = Paths.get(fileName);
 		try {
@@ -80,16 +240,34 @@ public class ClienteMain {
 				byteArray = geraArquivo();
 			}
 		}
-
 		
-		Master master = findMaster(args[0]);
-
-		try {
-			resultado = master.attack(byteArray, palavraConhecida);
-
-		} catch (RemoteException e) {
-			System.out.println("[DEBUG]: Erro na execucao do Mestre");
+		Attacker master = findMaster(args[0]);
+		if(args[0] != null){
+			try {
+				resultado = master.attack(byteArray, palavraConhecida);
+				
+			} catch (RemoteException e) {
+				System.out.println("[DEBUG]: Erro na execucao do Mestre");
+			}
 		}
+		if(resultado.length > 0){
+			try {
+				for(int i = 0 ; i < resultado.length ; i++){
+					FileOutputStream fos = new FileOutputStream(resultado[i].getKey()+".msg");
+					fos.write(resultado[i].getMessage());
+					fos.close();
+				}
+			} catch (IOException e) {
+				System.out.println("[DEBUG]: Erro ao escrever Arquivo msg");
+			}
+		}
+
+		/* CSVs */
+		if(args[4] != null && byteArray != null && palavraConhecida != null){
+			gerarCsvSerial(args[4],palavraConhecida);
+			//gerarCsv(args[4],palavraConhecida, master);
+		}
+		/* CSVs */		
 	}
 
 }

@@ -5,7 +5,16 @@ public class SlaveData {
 	private long inicio;
 	private long fim;
 	private Slave slave;
+	private Double tempo;
 	
+	
+	
+	public Double getTempo() {
+		return tempo / 1000000000.0;
+	}
+	public void setTempo(Double tempo) {
+		this.tempo = tempo;
+	}
 	public Slave getSlave() {
 		return slave;
 	}

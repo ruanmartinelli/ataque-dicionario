@@ -1,4 +1,4 @@
-
+package br.inf.ufes.pp2015_01;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -14,10 +14,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
@@ -26,8 +22,8 @@ import javax.crypto.spec.SecretKeySpec;
 public class SlaveImpl implements Slave{
 	
 	private static int id;
-	private String nome;
-	private long currentIndex = 0;
+	private String 	nome;
+	private long 	currentIndex = 0;
 	private static List<String> dicionario = new ArrayList<String>();
 	private SlaveManager sm;
 	
@@ -47,8 +43,7 @@ public class SlaveImpl implements Slave{
 			}
 			br.close();
 		} catch (IOException e1) {
-			System.out
-					.println("[DEBUG]: Arquivo dicionario do escravo nao encontrado.");
+			System.out.println("[DEBUG]: Arquivo dicionario do escravo nao encontrado.");
 		}
 	}
 	
@@ -58,22 +53,18 @@ public class SlaveImpl implements Slave{
 	
 	public static int longToIntSeguro(long l) {
 	    if (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE) {
-	        throw new IllegalArgumentException
-	            ("[ERRO]: Dicionario grande demais.");
+	        throw new IllegalArgumentException("[ERRO]: Dicionario grande demais.");
 	    }
 	    return (int) l;
 	}
 	
 	public static byte[] decrypt(String key, byte[] ciphertext){
-		//chave =  new byte[key.length()];
-		//message = new byte[ciphertext.length];
 		byte[] decrypted = null;
 		try{
 			byte[] chave = key.getBytes();
 			SecretKeySpec keySpec = new SecretKeySpec(chave, "Blowfish");
 			
 			byte[] message = ciphertext;
-			//System.out.println("[DEBUG]: Message size (bytes) = "+ message.length);
 			
 			Cipher cipher = Cipher.getInstance("Blowfish");
 			cipher.init(Cipher.DECRYPT_MODE, keySpec);
@@ -81,15 +72,12 @@ public class SlaveImpl implements Slave{
 			
 			return decrypted;
 		}catch (javax.crypto.BadPaddingException a) {
-			// essa excecao e jogada quando a senha esta incorreta
-			// porem nao quer dizer que a senha esta correta se nao jogar essa excecao
-			//System.out.println("Senha invalida.");
+			System.out.println("[INFO]: Senha '"+ key +"' invalida.");
 			return decrypted;
 		
 		
 		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException e) {
 			System.out.println("[ERRO]: Erro ao decriptografar mensagem com a chave "+ key);
-			//e.printStackTrace();
 			return decrypted;
 		}
 	}
@@ -109,37 +97,32 @@ public class SlaveImpl implements Slave{
 	}
 	
 	@Override
-	public void startSubAttack(byte[] ciphertext, byte[] knowntext,long initialwordindex, long finalwordindex,SlaveManager callbackinterface) throws RemoteException {
+	public void startSubAttack(byte[] ciphertext, byte[] knowntext,	long initialwordindex, long finalwordindex,	SlaveManager callbackinterface) throws RemoteException {
 		currentIndex = initialwordindex;
-		sm =  callbackinterface;
-		//Checkpoint a cada 10 segundos
-				Timer timer = new Timer();  
-				timer.scheduleAtFixedRate(  
-				        new TimerTask() {  
-				            public void run() {  
-				            	try {
-				            		sm.checkpoint(SlaveImpl.this.currentIndex-1);
-								} catch (RemoteException e) {
-									e.printStackTrace();
-								}
-				            }  
-				        }, 1000, 10000);
-		System.out.println("Initial antes do for: "+initialwordindex+" final: "+finalwordindex);
-		for(String palavra : getSublista(longToIntSeguro(initialwordindex),longToIntSeguro(finalwordindex))){
-			byte[] resposta = decrypt(palavra, ciphertext);			
-			
-			if(resposta != null && indexOf(resposta, knowntext) != -1){
+		sm = callbackinterface;
+		Timer timer = new Timer();
+		timer.scheduleAtFixedRate(new TimerTask() {
+			public void run() {
+				try {
+					sm.checkpoint(SlaveImpl.this.currentIndex - 1);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+		}, 1000, 10000);
+
+		for (String palavra : getSublista(longToIntSeguro(initialwordindex),
+				longToIntSeguro(finalwordindex))) {
+			byte[] resposta = decrypt(palavra, ciphertext);
+
+			if (resposta != null && indexOf(resposta, knowntext) != -1) {
 				Guess candidata = new Guess();
 				candidata.setKey(palavra);
 				candidata.setMessage(resposta);
-				System.out.println("@Current ante de mandar: "+currentIndex);
 				callbackinterface.foundGuess(currentIndex, candidata);
 			}
 			currentIndex++;
 		}
-		//imprime o ultimo checkpoint antes de terminar
-		//sm.checkpoint(currentIndex);
-		//Thread.interrupted();
 	}
 	
 	/* Procura Master no Registry e retorna a interface. */
@@ -159,28 +142,26 @@ public class SlaveImpl implements Slave{
 		return mestre;
 	}
 	
-	private static void registerSlave(Master mestre){
-		final Master aux3 = mestre;
+	private static void registerSlave(Master mestre) {
+		final Master masterRef = mestre;
 		final SlaveImpl escravo = new SlaveImpl();
 		try {
-			escravo.setId(UUID.randomUUID().toString());
-			
-			//Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 2001);
+			escravo.setNome(UUID.randomUUID().toString());
+
+			// Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo,2001);
 			final Slave stub = (Slave) UnicastRemoteObject.exportObject(escravo, 0);
-			
-			//chama addSlave de 30 em 30 segundos
-			Timer timer = new Timer();  
-			timer.scheduleAtFixedRate(  
-			        new TimerTask() {  
-			            public void run() {  
-			            	try {
-								id = aux3.addSlave(stub, escravo.getId());
-							} catch (RemoteException e) {
-								e.printStackTrace();
-							}
-			            }  
-			        }, 0, 30000);
-			
+
+			Timer timer = new Timer();
+			timer.scheduleAtFixedRate(new TimerTask() {
+				public void run() {
+					try {
+						id = masterRef.addSlave(stub, escravo.getNome());
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+			}, 0, 30000);
+
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -201,20 +182,17 @@ public class SlaveImpl implements Slave{
 	}
 
 	public static void main(String[] args) {
-		
 		makeDicionario();
 		registerSlave(getMaster(""));
 		attachShutDownHook(getMaster(""));
-		
 	}
 	
-	
 	//Getters and Setters
-	public String getId() {
+	public String getNome() {
 		return nome;
 	}
 	
-	public void setId(String id) {
-		this.nome = id;
+	public void setNome(String nome) {
+		this.nome = nome;
 	}
 }
