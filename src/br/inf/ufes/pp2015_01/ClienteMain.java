@@ -52,7 +52,6 @@ public class ClienteMain {
 		byte[] result = new byte[tamanho];
 		Random random = new Random();
 		random.nextBytes(result);
-		System.out.println(result);
 
 		try {
 			FileOutputStream fos = new FileOutputStream(fileName);
@@ -151,7 +150,7 @@ public class ClienteMain {
 			}
 			index++;
 		}
-		System.out.println("[INFO]: Ataque serial concluído.");
+		System.out.println("[INFO]: Ataque serial concluizdo.");
 	}
 	
 	private static void gerarCsvSerial(String argumento, byte[] palavraConhecida){
@@ -161,7 +160,8 @@ public class ClienteMain {
 		try {
 			PrintWriter csv = new PrintWriter(nome + ".csv");
 			
-			for(int i = 1000 ; i < 100000 ; i = i + 500){
+			for(int i = 1000 ; i < 30000 ; i = i + 1000){
+				System.out.println("Tamanho da mensagem: " + i);
 				byte[] msg = geraArquivo(i);
 				Long begin = System.nanoTime();
 				ataqueSerial(msg, palavraConhecida);
@@ -191,7 +191,8 @@ public class ClienteMain {
 		try {
 			PrintWriter csv = new PrintWriter(nome + ".csv");
 			
-			for(int i = 1000 ; i < 100000 ; i = i + 500){
+			for(int i = 1000 ; i < 30000 ; i = i + 1000){
+				System.out.println("Tamanho da mensagem: " + i);
 				byte[] msg = geraArquivo(i);
 				Long begin = System.nanoTime();
 				servicoAtaque.attack(msg, palavraConhecida);
